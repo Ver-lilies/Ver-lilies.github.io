@@ -29,6 +29,7 @@
         <button onclick="setMode(1)">1: 波浪 (Wave)</button>
         <button onclick="setMode(2)">2: 凸透镜 (Bulge)</button>
         <button onclick="setMode(3)">3: 凹透镜 (Pinch)</button>
+        <button onclick="stopCamera()" style="background-color: #f44336;">关闭摄像头</button>
     </div>
 
     <script>
@@ -162,6 +163,23 @@
                     statusEl.innerText = "错误：无法访问摄像头，请检查权限。";
                     statusEl.style.color = "red";
                 });
+        }
+
+        function stopCamera() {
+            if (video.srcObject) {
+                // 停止所有摄像头轨道
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                statusEl.innerText = "摄像头已关闭";
+                statusEl.style.color = "white";
+
+                // 清空视频显示区域
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = "#000";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#FFF";
+                ctx.fillText("摄像头已关闭，请刷新页面重新开启", 20, 40);
+            }
         }
 
         // 对应 Python 版的 init_distortion_maps
