@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web摄像头图像扭曲 (纯前端)</title>
+    <!-- 引入 OpenCV.js -->
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+    <style>
+        body { text-align: center; font-family: sans-serif; background-color: #222; color: white; margin: 0; padding: 20px;}
+        canvas { border: 2px solid #555; background-color: #000; margin-top: 10px; max-width: 100%; height: auto; }
+        .controls { margin-top: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+        button { padding: 10px 20px; cursor: pointer; font-size: 16px; border-radius: 5px; border: none; background-color: #4CAF50; color: white;}
+        button:hover { background-color: #45a049; }
+        #status { margin-bottom: 20px; font-weight: bold; color: #ffeb3b; }
+    </style>
+</head>
+<body>
+    <h2>纯前端版图像扭曲 (适用于 GitHub Pages)</h2>
+    <div id="status">正在加载 OpenCV.js...</div>
+    
+    <video id="video" width="640" height="480" autoplay playsinline style="display: none;"></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    
+    <div class="controls">
+        <button onclick="setMode(0)">0: 正常</button>
+        <button onclick="setMode(1)">1: 波浪 (Wave)</button>
+        <button onclick="setMode(2)">2: 凸透镜 (Bulge)</button>
+        <button onclick="setMode(3)">3: 凹透镜 (Pinch)</button>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const statusEl = document.getElementById('status');
+        
+        let isOpenCvReady = false;
+        let mode = 0;
+        const modeNames = ["0: Normal", "1: Wave Distortion", "2: Bulge Distortion", "3: Pinch Distortion"];
+
+        // 预先计算好的映射表
+        let map_x_wave, map_y_wave;
+        let map_x_bulge, map_y_bulge;
+        let map_x_pinch, map_y_pinch;
+        
+        // OpenCV 矩阵变量，避免内存泄漏
+        let srcMat, dstMat;
+
+        function setMode(newMode) {
+            mode = newMode;
+        }
+
+        // OpenCV.js 加载完成后的回调
+        function onOpenCvReady() {
+            cv['onRuntimeInitialized'] = () => {
+                isOpenCvReady = true;
+                statusEl.innerText = "OpenCV.js 已加载，请求摄像头权限...";
+                startCamera();
+            };
+        }
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                    
+                    video.onloadedmetadata = () => {
+                        const width = video.videoWidth;
+                        const height = video.videoHeight;
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // 初始化 OpenCV 矩阵和映射表
+                        initDistortionMaps(width, height);
+                        srcMat = new cv.Mat(height, width, cv.CV_8UC4);
+                        dstMat = new cv.Mat(height, width, cv.CV_8UC4);
+                        
+                        statusEl.innerText = "摄像头正在运行";
+                        requestAnimationFrame(processVideo);
+                    };
+                })
+                .catch(function(err) {
+                    console.log("摄像头获取失败:", err);
+                    statusEl.innerText = "错误：无法访问摄像头，请检查权限。";
+                    statusEl.style.color = "red";
+                });
+        }
+
+        // 对应 Python 版的 init_distortion_maps
+        function initDistortionMaps(width, height) {
+            map_x_wave = new cv.Mat(height, width, cv.CV_32FC1);
+            map_y_wave = new cv.Mat(height, width, cv.CV_32FC1);
+            map_x_bulge = new cv.Mat(height, width, cv.CV_32FC1);
+            map_y_bulge = new cv.Mat(height, width, cv.CV_32FC1);
+            map_x_pinch = new cv.Mat(height, width, cv.CV_32FC1);
+            map_y_pinch = new cv.Mat(height, width, cv.CV_32FC1);
+
+            const cx = width / 2.0;
+            const cy = height / 2.0;
+            const R_max = Math.sqrt(cx*cx + cy*cy) + 1;
+
+            // 为了性能，在 JS 中直接用嵌套循环计算（或者可以用更复杂的矩阵操作）
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    // 1. Wave
+                    map_x_wave.floatPtr(y, x)[0] = x + 20 * Math.sin(y / 20.0);
+                    map_y_wave.floatPtr(y, x)[0] = y;
+
+                    // 极坐标用于透镜
+                    const dx = x - cx;
+                    const dy = y - cy;
+                    const r = Math.sqrt(dx*dx + dy*dy);
+                    let theta = Math.atan2(dy, dx);
+
+                    // 2. Bulge
+                    const r_bulge = r * (r / R_max);
+                    map_x_bulge.floatPtr(y, x)[0] = cx + r_bulge * Math.cos(theta);
+                    map_y_bulge.floatPtr(y, x)[0] = cy + r_bulge * Math.sin(theta);
+
+                    // 3. Pinch
+                    const r_pinch = Math.sqrt(r * R_max);
+                    map_x_pinch.floatPtr(y, x)[0] = cx + r_pinch * Math.cos(theta);
+                    map_y_pinch.floatPtr(y, x)[0] = cy + r_pinch * Math.sin(theta);
+                }
+            }
+        }
+
+        function processVideo() {
+            if (!isOpenCvReady || video.readyState !== video.HAVE_ENOUGH_DATA) {
+                requestAnimationFrame(processVideo);
+                return;
+            }
+
+            try {
+                // 将视频帧绘制到一个临时的大小的 canvas / 处理上下文中
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // 将 Canvas 图像读取到 OpenCV Mat 中
+                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                srcMat.data.set(imageData.data);
+
+                if (mode === 0) {
+                    cv.imshow('canvas', srcMat);
+                } else {
+                    let map_x, map_y;
+                    if (mode === 1) { map_x = map_x_wave; map_y = map_y_wave; }
+                    else if (mode === 2) { map_x = map_x_bulge; map_y = map_y_bulge; }
+                    else if (mode === 3) { map_x = map_x_pinch; map_y = map_y_pinch; }
+
+                    // 执行映射 (remap)
+                    cv.remap(srcMat, dstMat, map_x, map_y, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(0, 0, 0, 255));
+                    cv.imshow('canvas', dstMat);
+                }
+
+                // 在画面上绘制提示文本
+                ctx.fillStyle = "#00FF00";
+                ctx.font = "24px Arial";
+                ctx.fillText(modeNames[mode], 20, 40);
+
+            } catch (err) {
+                console.error(err);
+            }
+
+            requestAnimationFrame(processVideo);
+        }
+    </script>
+</body>
+</html>
