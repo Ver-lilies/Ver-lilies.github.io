@@ -15,7 +15,11 @@
 </head>
 <body>
     <h2>纯前端版图像扭曲 (适用于 GitHub Pages)</h2>
-    <div id="status">正在加载 OpenCV.js...</div>
+    <div id="status">正在加载 OpenCV.js...
+        <div id="progress-container" style="width: 100%; max-width: 400px; background-color: #ddd; margin: 10px auto; border-radius: 5px; overflow: hidden; display: none;">
+            <div id="progress-bar" style="height: 20px; width: 0%; background-color: #4CAF50; transition: width 0.2s;"></div>
+        </div>
+    </div>
     
     <video id="video" width="640" height="480" autoplay playsinline style="display: none;"></video>
     <canvas id="canvas" width="640" height="480"></canvas>
@@ -28,16 +32,82 @@
     </div>
 
     <script>
-        // Module object to listen for OpenCV.js being ready
+        // Module object to listen for OpenCV.js being ready and print its loading phase
         var Module = {
+            setStatus: function(text) {
+                const statusEl = document.getElementById('status');
+                if (text) {
+                    statusEl.innerText = text;
+                }
+            },
             onRuntimeInitialized: function() {
                 onOpenCvReady();
             }
         };
     </script>
 
-    <script async src="https://docs.opencv.org/4.8.0/opencv.js" type="text/javascript"></script>
+    <!-- 使用 Fetch 手动加载并监控进度，从而代替直接引入 script -->
+    <script>
+        (async function loadOpenCV() {
+            const statusEl = document.getElementById('status');
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            
+            // 使用另一个 CDN 能够提供 CORS 和进度
+            const url = 'https://cdn.jsdelivr.net/npm/opencv.js@1.2.1/opencv.min.js';
+            progressContainer.style.display = 'block';
 
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("网络错误");
+                
+                const contentLength = response.headers.get('content-length');
+                if (!contentLength) {
+                    statusEl.innerText = "正在下载 OpenCV.js...";
+                }
+                
+                const total = parseInt(contentLength, 10);
+                let loaded = 0;
+                
+                const reader = response.body.getReader();
+                const chunks = [];
+                
+                while(true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    
+                    chunks.push(value);
+                    loaded += value.length;
+                    
+                    if (total) {
+                        const percent = (loaded / total) * 100;
+                        progressBar.style.width = percent + '%';
+                        statusEl.innerText = `正在下载 OpenCV.js... ${Math.round(percent)}%`;
+                    } else {
+                        statusEl.innerText = `正在下载 OpenCV.js... ${(loaded/1024/1024).toFixed(2)} MB`;
+                    }
+                }
+                
+                statusEl.innerText = "下载完成，正在解析...";
+                progressContainer.style.display = 'none';
+                
+                // 将代码合成字符串并执行
+                const blob = new Blob(chunks, { type: 'application/javascript' });
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const script = document.createElement('script');
+                script.src = blobUrl;
+                script.onload = () => { URL.revokeObjectURL(blobUrl); };
+                document.body.appendChild(script);
+                
+            } catch (err) {
+                console.error("加载 OpenCV.js 失败:", err);
+                statusEl.innerText = "加载 OpenCV.js 失败，请刷新重试。";
+                statusEl.style.color = "red";
+            }
+        })();
+    </script>
+    
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
