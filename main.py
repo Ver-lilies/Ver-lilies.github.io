@@ -1,15 +1,16 @@
 import cv2
 import numpy as np
 import sys
+import time
 
-# 新增：定义生成三种扭曲映射表的函数
-def init_distortion_maps(width, height):
+# 新增：定义生成三种扭曲映射表的函数，并增加扭曲程度控制参数 intensity
+def init_distortion_maps(width, height, intensity=1.0):
     # 构建坐标网格
     map_y, map_x = np.indices((height, width), dtype=np.float32)
     
     # 1. 波浪扭曲 (Wave)
-    # 通过对 y 坐标应用正弦函数来使 x 坐标产生波动
-    map_x_wave = map_x + 20 * np.sin(map_y / 20.0)
+    # 通过对 y 坐标应用正弦函数来使 x 坐标产生波动，振幅受 intensity 控制
+    map_x_wave = map_x + (20 * intensity) * np.sin(map_y / 20.0)
     map_y_wave = map_y.copy()
     
     # 构建极坐标用于透镜特效
@@ -21,14 +22,16 @@ def init_distortion_maps(width, height):
     R_max = np.sqrt(cx**2 + cy**2) + 1  # 避免除以零
     
     # 2. 凸透镜效果/凹陷 (Bulge)
-    # 使中心区域膨胀扭曲
-    r_bulge = r * (r / R_max)
+    # 使中心区域膨胀扭曲，变化幅度受 intensity 控制
+    r_bulge_base = r * (r / R_max)
+    r_bulge = r + (r_bulge_base - r) * intensity
     map_x_bulge = cx + r_bulge * np.cos(theta)
     map_y_bulge = cy + r_bulge * np.sin(theta)
     
     # 3. 凹透镜效果/缩小 (Pinch)
-    # 使中心区域收缩扭曲
-    r_pinch = np.sqrt(r * R_max)
+    # 使中心区域收缩扭曲，变化幅度受 intensity 控制
+    r_pinch_base = np.sqrt(r * R_max)
+    r_pinch = r + (r_pinch_base - r) * intensity
     map_x_pinch = cx + r_pinch * np.cos(theta)
     map_y_pinch = cy + r_pinch * np.sin(theta)
     
@@ -52,6 +55,8 @@ def main():
     print(" 按 '1' 键: 波浪扭曲效果 (Wave)")
     print(" 按 '2' 键: 凸透镜效果   (Bulge)")
     print(" 按 '3' 键: 凹透镜效果   (Pinch)")
+    print(" 按 'a/d' 键: 减小/增大 扭曲程度")
+    print(" 按 's' 键: 拍照并保存到本地")
     print(" 按 'q' 键: 退出程序")
     print("==================================================")
     
@@ -63,7 +68,8 @@ def main():
         return
         
     height, width = frame.shape[:2]
-    maps = init_distortion_maps(width, height)
+    intensity = 1.0
+    maps = init_distortion_maps(width, height, intensity)
     
     mode = 0  # 初始模式：正常画面
     mode_names = ["0: Normal", "1: Wave Distortion", "2: Bulge Distortion", "3: Pinch Distortion"]
@@ -74,6 +80,7 @@ def main():
             print("无法获取图像，退出...")
             break
             
+        distorted_frame = frame.copy()
         # 根据当前模式采用对应的扭曲算法处理采集到的图像
         if mode == 0:
             distorted_frame = frame
@@ -83,7 +90,7 @@ def main():
             distorted_frame = cv2.remap(frame, map_x, map_y, interpolation=cv2.INTER_LINEAR)
         
         # 在展示图像上方绘制当前所用算法和模式的提示文本
-        cv2.putText(distorted_frame, mode_names[mode], (20, 40), 
+        cv2.putText(distorted_frame, f"{mode_names[mode]} (Intensity: {intensity:.1f})", (20, 40), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             
         # 展示扭曲后的图像
@@ -105,6 +112,18 @@ def main():
         elif key == ord('3'):
             mode = 3
             print(">> 已切换到: 凹透镜特效")
+        elif key == ord('a'):
+            intensity = max(0.0, intensity - 0.2)
+            maps = init_distortion_maps(width, height, intensity)
+            print(f">> 扭曲程度减小为: {intensity:.1f}")
+        elif key == ord('d'):
+            intensity = min(5.0, intensity + 0.2)
+            maps = init_distortion_maps(width, height, intensity)
+            print(f">> 扭曲程度增大为: {intensity:.1f}")
+        elif key == ord('s'):
+            filename = f"photo_{int(time.time())}.jpg"
+            cv2.imwrite(filename, distorted_frame)
+            print(f">> 拍照成功！已保存为: {filename}")
             
     # 释放资源
     cap.release()
