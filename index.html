@@ -29,7 +29,15 @@
         <button onclick="setMode(1)">1: 波浪 (Wave)</button>
         <button onclick="setMode(2)">2: 凸透镜 (Bulge)</button>
         <button onclick="setMode(3)">3: 凹透镜 (Pinch)</button>
-        python main.py        <button onclick="stopCamera()" style="background-color: #f44336;">关闭摄像头</button>
+        <button onclick="stopCamera()" style="background-color: #f44336;">关闭摄像头</button>
+    </div>
+    
+    <!-- 新增：调整扭曲程度与拍照保存的控制面板 -->
+    <div class="controls" style="margin-top: 10px;">
+        <label for="intensityRange" style="line-height: 40px; margin-right: 10px;">扭曲程度:</label>
+        <input type="range" id="intensityRange" min="0" max="5" step="0.1" value="1.0" onchange="updateIntensity(this.value)" oninput="updateIntensity(this.value)" style="vertical-align: middle;">
+        <span id="intensityValue" style="line-height: 40px; margin-left: 10px; width: 30px; text-align: left;">1.0</span>
+        <button onclick="takePhoto()" style="background-color: #2196F3; margin-left: 20px;">📷 拍照并保存</button>
     </div>
 
     <script>
@@ -116,6 +124,7 @@
         
         let isOpenCvReady = false;
         let mode = 0;
+        let intensity = 1.0;
         const modeNames = ["0: Normal", "1: Wave Distortion", "2: Bulge Distortion", "3: Pinch Distortion"];
 
         // 预先计算好的映射表
@@ -128,6 +137,35 @@
 
         function setMode(newMode) {
             mode = newMode;
+        }
+        
+        function updateIntensity(value) {
+            intensity = parseFloat(value);
+            document.getElementById('intensityValue').innerText = intensity.toFixed(1);
+            if (isOpenCvReady && video.videoWidth > 0 && video.videoHeight > 0) {
+                // 重新计算映射表
+                initDistortionMaps(video.videoWidth, video.videoHeight);
+            }
+        }
+        
+        function takePhoto() {
+            if (!isOpenCvReady || !video.srcObject) {
+                alert("摄像头尚未运行，无法拍照！");
+                return;
+            }
+            // 获取当前 Canvas 上的图像数据，转为 Data URL
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+            // 创建一个隐藏的 a 标签来触发下载
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `photo_${new Date().getTime()}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 简单的拍照反馈动画效果
+            canvas.style.opacity = 0.5;
+            setTimeout(() => { canvas.style.opacity = 1; }, 200);
         }
 
         // OpenCV.js 加载完成后的回调
@@ -184,6 +222,13 @@
 
         // 对应 Python 版的 init_distortion_maps
         function initDistortionMaps(width, height) {
+            // 如果之前有分配内存，在重新生成时先释放（如果不释放会导致内存泄漏）
+            if (map_x_wave && !map_x_wave.isDeleted()) {
+                map_x_wave.delete(); map_y_wave.delete();
+                map_x_bulge.delete(); map_y_bulge.delete();
+                map_x_pinch.delete(); map_y_pinch.delete();
+            }
+            
             map_x_wave = new cv.Mat(height, width, cv.CV_32FC1);
             map_y_wave = new cv.Mat(height, width, cv.CV_32FC1);
             map_x_bulge = new cv.Mat(height, width, cv.CV_32FC1);
@@ -195,11 +240,11 @@
             const cy = height / 2.0;
             const R_max = Math.sqrt(cx*cx + cy*cy) + 1;
 
-            // 为了性能，在 JS 中直接用嵌套循环计算（或者可以用更复杂的矩阵操作）
+            // 为了性能，在 JS 中直接用嵌套循环计算
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
-                    // 1. Wave
-                    map_x_wave.floatPtr(y, x)[0] = x + 20 * Math.sin(y / 20.0);
+                    // 1. Wave: 使用 intensity 控制波动幅度
+                    map_x_wave.floatPtr(y, x)[0] = x + (20 * intensity) * Math.sin(y / 20.0);
                     map_y_wave.floatPtr(y, x)[0] = y;
 
                     // 极坐标用于透镜
@@ -208,13 +253,15 @@
                     const r = Math.sqrt(dx*dx + dy*dy);
                     let theta = Math.atan2(dy, dx);
 
-                    // 2. Bulge
-                    const r_bulge = r * (r / R_max);
+                    // 2. Bulge: 膨胀幅度受 intensity 控制
+                    const r_bulge_base = r * (r / R_max);
+                    const r_bulge = r + (r_bulge_base - r) * intensity;
                     map_x_bulge.floatPtr(y, x)[0] = cx + r_bulge * Math.cos(theta);
                     map_y_bulge.floatPtr(y, x)[0] = cy + r_bulge * Math.sin(theta);
 
-                    // 3. Pinch
-                    const r_pinch = Math.sqrt(r * R_max);
+                    // 3. Pinch: 缩小幅度受 intensity 控制
+                    const r_pinch_base = Math.sqrt(r * R_max);
+                    const r_pinch = r + (r_pinch_base - r) * intensity;
                     map_x_pinch.floatPtr(y, x)[0] = cx + r_pinch * Math.cos(theta);
                     map_y_pinch.floatPtr(y, x)[0] = cy + r_pinch * Math.sin(theta);
                 }
@@ -252,7 +299,7 @@
                 // 在画面上绘制提示文本
                 ctx.fillStyle = "#00FF00";
                 ctx.font = "24px Arial";
-                ctx.fillText(modeNames[mode], 20, 40);
+                ctx.fillText(`${modeNames[mode]} (Intensity: ${intensity.toFixed(1)})`, 20, 40);
 
             } catch (err) {
                 console.error(err);
