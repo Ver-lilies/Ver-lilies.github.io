@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Web 摄像头图像扭曲工作台</title>
     <style>
         :root {
@@ -32,6 +32,7 @@
         body {
             min-height: 100vh;
             margin: 0;
+            overflow-x: hidden;
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
             background:
@@ -214,7 +215,7 @@
             width: 100%;
             max-width: 100%;
             height: auto;
-            aspect-ratio: 4 / 3;
+            aspect-ratio: var(--camera-aspect, 4 / 3);
             background: #000;
         }
 
@@ -411,12 +412,46 @@
             .status {
                 min-width: 0;
             }
+
+            .workspace {
+                gap: 16px;
+            }
         }
 
-        @media (max-width: 560px) {
+        @media (max-width: 700px) {
             .app {
-                width: min(100% - 20px, 1180px);
-                padding: 18px 0;
+                width: min(100% - 24px, 1180px);
+                padding: 14px 0 24px;
+            }
+
+            .topbar {
+                gap: 16px;
+                padding: 16px;
+            }
+
+            .eyebrow {
+                margin-bottom: 6px;
+                font-size: 12px;
+            }
+
+            h1 {
+                font-size: clamp(28px, 9vw, 38px);
+            }
+
+            .subtitle {
+                font-size: 14px;
+                line-height: 1.65;
+            }
+
+            .status {
+                padding: 12px;
+            }
+
+            .stage,
+            .panel,
+            .topbar,
+            .status {
+                border-radius: 8px;
             }
 
             .mode-grid {
@@ -424,9 +459,29 @@
             }
 
             .stage-bar {
+                min-height: auto;
+                padding: 12px;
                 align-items: flex-start;
                 flex-direction: column;
-                padding: 12px;
+                gap: 8px;
+            }
+
+            .stage-meta {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .panel-header,
+            .panel-section {
+                padding: 16px;
+            }
+
+            .mode-button {
+                min-height: 50px;
+            }
+
+            button {
+                min-height: 48px;
             }
         }
     </style>
@@ -619,6 +674,26 @@
         // OpenCV 矩阵变量，避免内存泄漏
         let srcMat, dstMat;
 
+        function getPreferredVideoConstraints() {
+            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+            return {
+                audio: false,
+                video: {
+                    facingMode: "user",
+                    width: { ideal: isPortrait ? 720 : 1280 },
+                    height: { ideal: isPortrait ? 1280 : 720 },
+                    aspectRatio: { ideal: isPortrait ? 9 / 16 : 16 / 9 }
+                }
+            };
+        }
+
+        function syncCanvasSize(width, height) {
+            canvas.width = width;
+            canvas.height = height;
+            canvas.style.setProperty('--camera-aspect', `${width} / ${height}`);
+            resolutionLabel.innerText = `${width} x ${height}`;
+        }
+
         function setMode(newMode) {
             mode = newMode;
             document.querySelectorAll('.mode-button').forEach(button => {
@@ -665,7 +740,11 @@
         }
 
         function startCamera() {
-            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            navigator.mediaDevices.getUserMedia(getPreferredVideoConstraints())
+                .catch(function(err) {
+                    console.warn("使用推荐摄像头比例失败，回退到默认摄像头配置:", err);
+                    return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                })
                 .then(function(stream) {
                     video.srcObject = stream;
                     video.play();
@@ -673,9 +752,7 @@
                     video.onloadedmetadata = () => {
                         const width = video.videoWidth;
                         const height = video.videoHeight;
-                        canvas.width = width;
-                        canvas.height = height;
-                        resolutionLabel.innerText = `${width} x ${height}`;
+                        syncCanvasSize(width, height);
                         
                         // 初始化 OpenCV 矩阵和映射表
                         initDistortionMaps(width, height);
