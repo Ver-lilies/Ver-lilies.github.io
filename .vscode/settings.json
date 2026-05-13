@@ -1,0 +1,139 @@
+{
+  "latex-workshop.latex.outDir": "%DIR%/../out",
+  "latex-workshop.latex.magic.args": [],
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "xelatex -> biber -> xelatex*2",
+      "tools": [
+        "xelatex",
+        "biber",
+        "xelatex",
+        "xelatex"
+      ]
+    },
+    {
+      "name": "xelatex",
+      "tools": [
+        "xelatex"
+      ]
+    },
+    {
+      "name": "latexmk",
+      "tools": [
+        "latexmk"
+      ]
+    },
+    {
+      "name": "xelatex -> biber",
+      "tools": [
+        "xelatex",
+        "biber"
+      ]
+    },
+    {
+      "name": "pdflatex -> bibtex -> pdflatex*2",
+      "tools": [
+        "pdflatex",
+        "bibtex",
+        "pdflatex",
+        "pdflatex"
+      ]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk",
+      "command": "latexmk",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-xelatex",
+        "-outdir=%DIR%/../out",
+        "%DOC%"
+      ],
+      "env": {}
+    },
+    {
+      "name": "pdflatex",
+      "command": "pdflatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-output-directory=%DIR%/../out",
+        "%DOC%"
+      ],
+      "env": {}
+    },
+    {
+      "name": "bibtex",
+      "command": "bibtex",
+      "args": [
+        "%DIR%/../out/%DOCFILE%"
+      ],
+      "env": {}
+    },
+    {
+      "name": "xelatex",
+      "command": "xelatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-output-directory=%DIR%/../out",
+        "%DOC%"
+      ],
+      "env": {}
+    },
+    {
+      "name": "biber",
+      "command": "biber",
+      "args": [
+        "%DIR%/../out/%DOCFILE%"
+      ],
+      "env": {}
+    }
+  ],
+  "latex-workshop.latex.clean.fileTypes": [
+    "*.aux",
+    "*.bbl",
+    "*.blg",
+    "*.idx",
+    "*.ind",
+    "*.lof",
+    "*.lot",
+    "*.out",
+    "*.toc",
+    "*.acn",
+    "*.acr",
+    "*.alg",
+    "*.glg",
+    "*.glo",
+    "*.gls",
+    "*.ist",
+    "*.fls",
+    "*.log",
+    "*.fdb_latexmk"
+  ],
+  "latex-workshop.view.pdf.viewer": "external",
+  "latex-workshop.view.pdf.external.viewer.command": "open",
+  "latex-workshop.view.pdf.external.viewer.args": [
+    "%PDF%"
+  ],
+  "workbench.editorAssociations": {
+    "*.pdf": "latex-workshop-pdf-hook"
+  },
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.autoClean.run": "never",
+  "latex-workshop.latex.build.forceRecipeUsage": true,
+  "latex-workshop.showContextMenu": true,
+  "latex-workshop.intellisense.package.enabled": true,
+  "latex-workshop.message.error.show": false,
+  "latex-workshop.message.warning.show": false,
+  "latex-workshop.latex.recipe.default": "xelatex -> biber -> xelatex*2",
+  "latex-workshop.view.pdf.internal.synctex.keybinding": "double-click"
+}

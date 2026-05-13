@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "打开报告 PDF",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "${workspaceFolder}/rep/out/main.pdf"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

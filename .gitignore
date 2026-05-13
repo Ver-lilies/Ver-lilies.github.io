@@ -1,0 +1,12 @@
+rep/out/
+rep/ref/~$*.docx
+rep/src/*.aux
+rep/src/*.bbl
+rep/src/*.bcf
+rep/src/*.blg
+rep/src/*.log
+rep/src/*.out
+rep/src/*.pdf
+rep/src/*.run.xml
+rep/src/*.synctex.gz
+rep/src/*.toc

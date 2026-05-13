@@ -1,0 +1,253 @@
+% !TeX program = xelatex
+% !TeX encoding = UTF-8
+
+\documentclass[UTF8,a4paper,zihao=-4,oneside,openany,fontset=none]{ctexrep}
+
+\usepackage{iftex}
+\ifXeTeX\else
+  \PackageError{course-report}{请使用 XeLaTeX 编译本文档}{本模板需要 XeLaTeX 以支持中文字体。}
+\fi
+
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
+
+\addbibresource{references.bib}
+\graphicspath{{rep/pic/}{../pic/}}
+
+% 字体设置：正文以宋体为主，标题与强调以楷体为主。
+% 使用 TeX Live 自带 Fandol 字体文件可确保中文字体嵌入 PDF，
+% 避免 VS Code/LaTeX Workshop 的 PDF.js 预览出现乱码、空白或错位。
+\IfFontExistsTF{Times New Roman}{
+  \setmainfont{Times New Roman}
+}{
+  \setmainfont{TeX Gyre Termes}
+}
+
+\setCJKmainfont{FandolSong-Regular.otf}[BoldFont=FandolSong-Bold.otf]
+\setCJKfamilyfont{reportsong}{FandolSong-Regular.otf}[BoldFont=FandolSong-Bold.otf]
+\setCJKfamilyfont{reportkai}{FandolKai-Regular.otf}[BoldFont=FandolKai-Regular.otf]
+
+\newcommand{\reportsong}{\CJKfamily{reportsong}}
+\newcommand{\reportkai}{\CJKfamily{reportkai}}
+\xeCJKsetup{AutoFakeBold=true,AutoFakeSlant=true}
+
+% 页面设置参考 Word 模板：A4，四周约 30mm。
+\geometry{
+  top=30mm,
+  bottom=30mm,
+  left=30mm,
+  right=30mm,
+  headheight=15pt,
+  headsep=8mm,
+  footskip=12mm
+}
+
+\linespread{1.35}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+\setlist{nosep,leftmargin=2em}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black,
+  pdfauthor={},
+  pdftitle={}
+}
+
+\ctexset{
+  chapter = {
+    name = {第,章},
+    number = \chinese{chapter},
+    aftername = \quad,
+    format = \centering\reportkai\bfseries\zihao{3},
+    beforeskip = 24pt,
+    afterskip = 24pt
+  },
+  section = {
+    format = \reportkai\bfseries\zihao{4},
+    beforeskip = 18pt,
+    afterskip = 10pt
+  },
+  subsection = {
+    format = \reportkai\bfseries\zihao{-4},
+    beforeskip = 12pt,
+    afterskip = 8pt
+  }
+}
+
+\renewcommand{\contentsname}{目\quad 录}
+\renewcommand{\figurename}{图}
+\renewcommand{\tablename}{表}
+\renewcommand{\thefigure}{\thechapter-\arabic{figure}}
+\renewcommand{\thetable}{\thechapter-\arabic{table}}
+\renewcommand{\theequation}{\thechapter-\arabic{equation}}
+\numberwithin{equation}{chapter}
+
+\captionsetup{
+  font=small,
+  labelfont=bf,
+  labelsep=space,
+  justification=centering
+}
+
+\fancypagestyle{frontmatterstyle}{
+  \fancyhf{}
+  \fancyhead[C]{\reportsong\zihao{-5} 电子科技大学综合课程设计论文}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+\fancypagestyle{mainmatterstyle}{
+  \fancyhf{}
+  \fancyhead[L]{\reportsong\zihao{-5} 电子科技大学综合课程设计论文}
+  \fancyhead[R]{\reportsong\zihao{-5} \leftmark}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyhead[L]{\reportsong\zihao{-5} 电子科技大学综合课程设计论文}
+  \fancyhead[R]{\reportsong\zihao{-5} \leftmark}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+\newcommand{\makecoverpage}{
+  \begin{titlepage}
+    \thispagestyle{empty}
+    \centering
+    \vspace*{8mm}
+
+    \includegraphics[width=0.24\textwidth]{R-C.png}
+
+    \vspace{24mm}
+    {\reportkai\bfseries\zihao{1} 综合设计课程报告\par}
+
+    \vspace{18mm}
+    {\reportkai\bfseries\zihao{2} 哈哈镜程序\par}
+
+    \vspace{32mm}
+    {\reportsong\zihao{3}
+      \renewcommand{\arraystretch}{1.8}
+      \begin{tabular}{>{\reportkai}r@{\quad}l}
+        指导老师： & 晏华 \\
+        学生姓名： & 李嘉旺 \\
+        学\qquad 号： & 2024150903016 \\
+      \end{tabular}
+    }
+
+    \vfill
+    {\reportsong\zihao{3} 2026年5月\par}
+    \vspace*{10mm}
+  \end{titlepage}
+  \clearpage
+}
+
+\newcommand{\makeabstractpage}{
+  \clearpage
+  \thispagestyle{frontmatterstyle}
+  \chapter*{摘\quad 要}
+  \addcontentsline{toc}{chapter}{摘 要}
+  % 在此撰写摘要。
+
+  \vspace{4\baselineskip}
+  \noindent{\reportkai\bfseries 关键词：}
+  % 在此填写关键词，关键词之间使用分号分隔。
+  \clearpage
+}
+
+\begin{document}
+\reportsong
+
+\makecoverpage
+
+\pagestyle{frontmatterstyle}
+\pagenumbering{Roman}
+\makeabstractpage
+\tableofcontents
+\thispagestyle{frontmatterstyle}
+\clearpage
+
+\pagestyle{mainmatterstyle}
+\pagenumbering{arabic}
+
+\chapter{绪 论}
+\section{项目完成情况}
+
+\section{项目介绍}
+\subsection{背景与意义}
+
+\subsection{操作方式}
+
+\section{开发技术介绍}
+
+\chapter{系统分析}
+\section{功能分析}
+\subsection{基本功能}
+
+\subsection{拓展功能}
+
+\section{系统结构分析}
+
+\chapter{详细设计及实现}
+\section{页面与交互布局}
+
+\section{摄像头采集模块}
+
+\section{图像扭曲算法}
+
+\section{控制面板设计}
+
+\section{拍照保存功能}
+
+\section{状态管理与异常处理}
+\subsection{模块协调}
+
+\subsection{用户交互事件}
+
+\subsection{图像处理流程}
+
+\subsection{系统状态切换}
+
+\chapter{测试}
+\section{应用环境构建}
+\subsection{硬件环境}
+
+\subsection{软件环境}
+
+\section{页面显示测试}
+
+\section{摄像头权限测试}
+
+\section{图像扭曲效果测试}
+
+\section{拍照保存测试}
+
+\section{浏览器兼容性测试}
+
+\section{小结}
+
+\clearpage
+\chapter*{参考文献}
+\addcontentsline{toc}{chapter}{参考文献}
+\printbibliography[heading=none]
+
+\end{document}
