@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Web 摄像头图像扭曲工作台</title>
+    <title>多效果实时哈哈镜</title>
     <style>
         :root {
             color-scheme: dark;
@@ -491,7 +491,7 @@
         <header class="topbar">
             <div>
                 <p class="eyebrow">OpenCV.js Camera Lab</p>
-                <h1>摄像头图像扭曲工作台</h1>
+                <h1>多效果实时哈哈镜</h1>
                 <p class="subtitle">实时预览波浪、凸透镜与凹透镜效果，支持调节扭曲强度并保存当前画面。</p>
             </div>
             <div id="status" class="status">
@@ -544,6 +544,10 @@
                             <span class="mode-index">3</span>
                             <span class="mode-name">凹透镜</span>
                         </button>
+                        <button class="mode-button" data-mode="4" onclick="setMode(4)">
+                            <span class="mode-index">4</span>
+                            <span class="mode-name">旋涡</span>
+                        </button>
                     </div>
                 </div>
 
@@ -563,7 +567,7 @@
                     <p class="panel-title">操作</p>
                     <div class="action-row">
                         <button class="photo-button" onclick="takePhoto()">拍照并保存</button>
-                        <button class="danger-button" onclick="stopCamera()">关闭摄像头</button>
+                        <button id="cameraToggleButton" class="danger-button" onclick="toggleCamera()">关闭摄像头</button>
                     </div>
                 </div>
             </aside>
@@ -661,15 +665,19 @@
         const intensityPanel = document.getElementById('intensityPanel');
         const modeLabel = document.getElementById('modeLabel');
         const resolutionLabel = document.getElementById('resolutionLabel');
+        const cameraToggleButton = document.getElementById('cameraToggleButton');
         let isOpenCvReady = false;
+        let isCameraRunning = false;
+        let isStartingCamera = false;
         let mode = 0;
         let intensity = 1.0;
-        const modeNames = ["正常", "波浪", "凸透镜", "凹透镜"];
+        const modeNames = ["正常", "波浪", "凸透镜", "凹透镜", "旋涡"];
 
         // 预先计算好的映射表
         let map_x_wave, map_y_wave;
         let map_x_bulge, map_y_bulge;
         let map_x_pinch, map_y_pinch;
+        let map_x_swirl, map_y_swirl;
         
         // OpenCV 矩阵变量，避免内存泄漏
         let srcMat, dstMat;
@@ -692,6 +700,34 @@
             canvas.height = height;
             canvas.style.setProperty('--camera-aspect', `${width} / ${height}`);
             resolutionLabel.innerText = `${width} x ${height}`;
+        }
+
+        function setCameraButtonState(running) {
+            cameraToggleButton.innerText = running ? "关闭摄像头" : "打开摄像头";
+            cameraToggleButton.classList.toggle('danger-button', running);
+            cameraToggleButton.classList.toggle('photo-button', !running);
+        }
+
+        function releaseProcessingResources() {
+            const mats = [
+                map_x_wave, map_y_wave,
+                map_x_bulge, map_y_bulge,
+                map_x_pinch, map_y_pinch,
+                map_x_swirl, map_y_swirl,
+                srcMat, dstMat
+            ];
+
+            mats.forEach(mat => {
+                if (mat && !mat.isDeleted()) {
+                    mat.delete();
+                }
+            });
+
+            map_x_wave = map_y_wave = null;
+            map_x_bulge = map_y_bulge = null;
+            map_x_pinch = map_y_pinch = null;
+            map_x_swirl = map_y_swirl = null;
+            srcMat = dstMat = null;
         }
 
         function setMode(newMode) {
@@ -740,6 +776,12 @@
         }
 
         function startCamera() {
+            if (!isOpenCvReady || isCameraRunning || isStartingCamera) {
+                return;
+            }
+
+            isStartingCamera = true;
+            setStatusMessage("正在打开摄像头...");
             navigator.mediaDevices.getUserMedia(getPreferredVideoConstraints())
                 .catch(function(err) {
                     console.warn("使用推荐摄像头比例失败，回退到默认摄像头配置:", err);
@@ -759,14 +801,28 @@
                         srcMat = new cv.Mat(height, width, cv.CV_8UC4);
                         dstMat = new cv.Mat(height, width, cv.CV_8UC4);
                         
+                        isStartingCamera = false;
+                        isCameraRunning = true;
+                        setCameraButtonState(true);
                         setStatusMessage("摄像头正在运行", "ready");
                         requestAnimationFrame(processVideo);
                     };
                 })
                 .catch(function(err) {
                     console.log("摄像头获取失败:", err);
+                    isStartingCamera = false;
+                    isCameraRunning = false;
+                    setCameraButtonState(false);
                     setStatusMessage("错误：无法访问摄像头，请检查权限。", "error");
                 });
+        }
+
+        function toggleCamera() {
+            if (isCameraRunning || video.srcObject) {
+                stopCamera();
+            } else {
+                startCamera();
+            }
         }
 
         function stopCamera() {
@@ -774,6 +830,11 @@
                 // 停止所有摄像头轨道
                 video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
+                video.onloadedmetadata = null;
+                isCameraRunning = false;
+                isStartingCamera = false;
+                releaseProcessingResources();
+                setCameraButtonState(false);
                 setStatusMessage("摄像头已关闭", "ready");
                 resolutionLabel.innerText = "摄像头已关闭";
 
@@ -796,6 +857,7 @@
                 map_x_wave.delete(); map_y_wave.delete();
                 map_x_bulge.delete(); map_y_bulge.delete();
                 map_x_pinch.delete(); map_y_pinch.delete();
+                map_x_swirl.delete(); map_y_swirl.delete();
             }
             
             map_x_wave = new cv.Mat(height, width, cv.CV_32FC1);
@@ -804,6 +866,8 @@
             map_y_bulge = new cv.Mat(height, width, cv.CV_32FC1);
             map_x_pinch = new cv.Mat(height, width, cv.CV_32FC1);
             map_y_pinch = new cv.Mat(height, width, cv.CV_32FC1);
+            map_x_swirl = new cv.Mat(height, width, cv.CV_32FC1);
+            map_y_swirl = new cv.Mat(height, width, cv.CV_32FC1);
 
             const cx = width / 2.0;
             const cy = height / 2.0;
@@ -833,12 +897,22 @@
                     const r_pinch = r + (r_pinch_base - r) * intensity;
                     map_x_pinch.floatPtr(y, x)[0] = cx + r_pinch * Math.cos(theta);
                     map_y_pinch.floatPtr(y, x)[0] = cy + r_pinch * Math.sin(theta);
+
+                    // 4. Swirl: 中心旋涡，越靠中心旋转越明显
+                    const normalized = Math.max(0, 1 - r / R_max);
+                    const swirlTheta = theta + (3.0 * intensity) * normalized * normalized;
+                    map_x_swirl.floatPtr(y, x)[0] = cx + r * Math.cos(swirlTheta);
+                    map_y_swirl.floatPtr(y, x)[0] = cy + r * Math.sin(swirlTheta);
                 }
             }
         }
 
         function processVideo() {
-            if (!isOpenCvReady || video.readyState !== video.HAVE_ENOUGH_DATA) {
+            if (!isOpenCvReady || !isCameraRunning || !video.srcObject) {
+                return;
+            }
+
+            if (video.readyState !== video.HAVE_ENOUGH_DATA || !srcMat || !dstMat) {
                 requestAnimationFrame(processVideo);
                 return;
             }
@@ -859,6 +933,7 @@
                     if (mode === 1) { map_x = map_x_wave; map_y = map_y_wave; }
                     else if (mode === 2) { map_x = map_x_bulge; map_y = map_y_bulge; }
                     else if (mode === 3) { map_x = map_x_pinch; map_y = map_y_pinch; }
+                    else if (mode === 4) { map_x = map_x_swirl; map_y = map_y_swirl; }
 
                     // 执行映射 (remap)
                     cv.remap(srcMat, dstMat, map_x, map_y, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(0, 0, 0, 255));
