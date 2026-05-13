@@ -682,19 +682,6 @@
         // OpenCV 矩阵变量，避免内存泄漏
         let srcMat, dstMat;
 
-        function getPreferredVideoConstraints() {
-            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-            return {
-                audio: false,
-                video: {
-                    facingMode: "user",
-                    width: { ideal: isPortrait ? 720 : 1280 },
-                    height: { ideal: isPortrait ? 1280 : 720 },
-                    aspectRatio: { ideal: isPortrait ? 9 / 16 : 16 / 9 }
-                }
-            };
-        }
-
         function syncCanvasSize(width, height) {
             canvas.width = width;
             canvas.height = height;
@@ -782,11 +769,7 @@
 
             isStartingCamera = true;
             setStatusMessage("正在打开摄像头...");
-            navigator.mediaDevices.getUserMedia(getPreferredVideoConstraints())
-                .catch(function(err) {
-                    console.warn("使用推荐摄像头比例失败，回退到默认摄像头配置:", err);
-                    return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                })
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
                 .then(function(stream) {
                     video.srcObject = stream;
                     video.play();
