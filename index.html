@@ -7,18 +7,22 @@
     <style>
         :root {
             color-scheme: dark;
-            --bg: #101214;
-            --surface: #181c20;
-            --surface-2: #20262b;
-            --line: #2e3740;
-            --text: #f4f7f8;
-            --muted: #9daab3;
-            --accent: #18c7a7;
-            --accent-strong: #0f9f87;
+            --bg: #0d1013;
+            --surface: #171b20;
+            --surface-2: #20262d;
+            --surface-3: #28313a;
+            --line: #303a44;
+            --line-soft: rgba(255, 255, 255, 0.08);
+            --text: #f7f4ef;
+            --muted: #a8b2ba;
+            --accent: #22c7a9;
+            --accent-strong: #12a48a;
+            --accent-soft: rgba(34, 199, 169, 0.14);
             --warning: #f6c84c;
             --danger: #ef5b5b;
-            --photo: #4b8dff;
-            --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+            --photo: #5b8cff;
+            --ink: #080b0d;
+            --shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
         }
 
         * {
@@ -31,23 +35,30 @@
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
             background:
-                linear-gradient(135deg, rgba(24, 199, 167, 0.12), transparent 32%),
-                linear-gradient(315deg, rgba(239, 91, 91, 0.10), transparent 38%),
+                radial-gradient(circle at top left, rgba(34, 199, 169, 0.16), transparent 34rem),
+                linear-gradient(135deg, rgba(91, 140, 255, 0.10), transparent 30%),
+                linear-gradient(315deg, rgba(239, 91, 91, 0.08), transparent 34%),
                 var(--bg);
         }
 
         .app {
-            width: min(1180px, calc(100% - 32px));
+            width: min(1240px, calc(100% - 32px));
             margin: 0 auto;
-            padding: 32px 0;
+            padding: 28px 0 36px;
         }
 
         .topbar {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             justify-content: space-between;
             gap: 24px;
-            margin-bottom: 22px;
+            margin-bottom: 20px;
+            padding: 18px 20px;
+            border: 1px solid var(--line-soft);
+            border-radius: 8px;
+            background: rgba(18, 22, 27, 0.74);
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.24);
+            backdrop-filter: blur(18px);
         }
 
         .eyebrow {
@@ -60,25 +71,24 @@
 
         h1 {
             margin: 0;
-            font-size: clamp(28px, 4vw, 44px);
+            font-size: clamp(28px, 4vw, 42px);
             line-height: 1.12;
         }
 
         .subtitle {
             max-width: 560px;
-            margin: 12px 0 0;
+            margin: 10px 0 0;
             color: var(--muted);
-            font-size: 16px;
-            line-height: 1.7;
+            font-size: 15px;
+            line-height: 1.65;
         }
 
         .status {
             min-width: min(360px, 100%);
-            padding: 14px 16px;
+            padding: 12px 14px;
             border: 1px solid var(--line);
             border-radius: 8px;
-            background: rgba(24, 28, 32, 0.86);
-            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.2);
+            background: rgba(10, 13, 16, 0.82);
         }
 
         .status-line {
@@ -127,7 +137,7 @@
 
         .workspace {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 320px;
+            grid-template-columns: minmax(0, 1fr) 340px;
             gap: 20px;
             align-items: start;
         }
@@ -139,6 +149,54 @@
             border-radius: 8px;
             background: #050607;
             box-shadow: var(--shadow);
+        }
+
+        .stage-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            min-height: 52px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(20, 25, 30, 0.92);
+        }
+
+        .stage-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .stage-title::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 14px var(--accent);
+        }
+
+        .stage-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .mode-chip {
+            min-width: 76px;
+            padding: 5px 10px;
+            border: 1px solid rgba(34, 199, 169, 0.35);
+            border-radius: 8px;
+            color: var(--accent);
+            background: var(--accent-soft);
+            text-align: center;
+            font-weight: 800;
         }
 
         .stage::before {
@@ -163,8 +221,28 @@
         .panel {
             border: 1px solid var(--line);
             border-radius: 8px;
-            background: rgba(24, 28, 32, 0.92);
+            overflow: hidden;
+            background: rgba(22, 27, 32, 0.94);
             box-shadow: 0 18px 60px rgba(0, 0, 0, 0.24);
+        }
+
+        .panel-header {
+            padding: 18px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(11, 14, 17, 0.34);
+        }
+
+        .panel-heading {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.2;
+        }
+
+        .panel-subtitle {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
         }
 
         .panel-section {
@@ -185,12 +263,12 @@
 
         .mode-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr;
+            gap: 8px;
         }
 
         button {
-            min-height: 42px;
+            min-height: 44px;
             padding: 0 14px;
             border: 1px solid transparent;
             border-radius: 8px;
@@ -215,9 +293,39 @@
         }
 
         .mode-button.active {
-            color: #071513;
+            color: var(--ink);
             background: var(--accent);
             border-color: var(--accent);
+        }
+
+        .mode-button {
+            display: grid;
+            grid-template-columns: 32px 1fr;
+            align-items: center;
+            gap: 10px;
+            min-height: 52px;
+            text-align: left;
+        }
+
+        .mode-index {
+            display: grid;
+            place-items: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            color: var(--accent);
+            background: rgba(34, 199, 169, 0.10);
+            font-variant-numeric: tabular-nums;
+            font-size: 13px;
+        }
+
+        .mode-button.active .mode-index {
+            color: var(--ink);
+            background: rgba(8, 11, 13, 0.12);
+        }
+
+        .mode-name {
+            font-size: 15px;
         }
 
         .action-row {
@@ -228,6 +336,11 @@
 
         .photo-button {
             background: var(--photo);
+        }
+
+        .photo-button:hover {
+            border-color: rgba(91, 140, 255, 0.68);
+            background: #6d9aff;
         }
 
         .danger-button {
@@ -249,13 +362,21 @@
             margin-bottom: 12px;
         }
 
+        .intensity-section {
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .intensity-section.is-hidden {
+            display: none;
+        }
+
         .range-head .panel-title {
             margin: 0;
         }
 
         #intensityValue {
-            min-width: 42px;
-            padding: 4px 8px;
+            min-width: 46px;
+            padding: 5px 9px;
             border-radius: 8px;
             color: var(--accent);
             background: rgba(24, 199, 167, 0.12);
@@ -266,15 +387,18 @@
 
         input[type="range"] {
             width: 100%;
+            height: 26px;
             accent-color: var(--accent);
             cursor: pointer;
         }
 
-        .hint {
-            margin: 12px 0 0;
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
             color: var(--muted);
-            font-size: 13px;
-            line-height: 1.6;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
         }
 
         @media (max-width: 900px) {
@@ -298,6 +422,12 @@
             .mode-grid {
                 grid-template-columns: 1fr;
             }
+
+            .stage-bar {
+                align-items: flex-start;
+                flex-direction: column;
+                padding: 12px;
+            }
         }
     </style>
 </head>
@@ -305,7 +435,7 @@
     <main class="app">
         <header class="topbar">
             <div>
-                <p class="eyebrow">Pure Frontend / OpenCV.js</p>
+                <p class="eyebrow">OpenCV.js Camera Lab</p>
                 <h1>摄像头图像扭曲工作台</h1>
                 <p class="subtitle">实时预览波浪、凸透镜与凹透镜效果，支持调节扭曲强度并保存当前画面。</p>
             </div>
@@ -324,27 +454,54 @@
 
         <section class="workspace" aria-label="图像处理工作区">
             <div class="stage">
+                <div class="stage-bar">
+                    <div class="stage-title">实时画面</div>
+                    <div class="stage-meta">
+                        <span id="modeLabel" class="mode-chip">正常</span>
+                        <span id="resolutionLabel">等待摄像头</span>
+                    </div>
+                </div>
                 <canvas id="canvas" width="640" height="480"></canvas>
             </div>
 
             <aside class="panel" aria-label="控制面板">
-                <div class="panel-section">
-                    <p class="panel-title">扭曲模式</p>
-                    <div class="mode-grid">
-                        <button class="mode-button active" data-mode="0" onclick="setMode(0)">正常</button>
-                        <button class="mode-button" data-mode="1" onclick="setMode(1)">波浪</button>
-                        <button class="mode-button" data-mode="2" onclick="setMode(2)">凸透镜</button>
-                        <button class="mode-button" data-mode="3" onclick="setMode(3)">凹透镜</button>
-                    </div>
+                <div class="panel-header">
+                    <h2 class="panel-heading">控制台</h2>
+                    <p class="panel-subtitle">选择效果、保存画面或关闭摄像头。</p>
                 </div>
 
                 <div class="panel-section">
+                    <p class="panel-title">扭曲模式</p>
+                    <div class="mode-grid">
+                        <button class="mode-button active" data-mode="0" onclick="setMode(0)">
+                            <span class="mode-index">0</span>
+                            <span class="mode-name">正常</span>
+                        </button>
+                        <button class="mode-button" data-mode="1" onclick="setMode(1)">
+                            <span class="mode-index">1</span>
+                            <span class="mode-name">波浪</span>
+                        </button>
+                        <button class="mode-button" data-mode="2" onclick="setMode(2)">
+                            <span class="mode-index">2</span>
+                            <span class="mode-name">凸透镜</span>
+                        </button>
+                        <button class="mode-button" data-mode="3" onclick="setMode(3)">
+                            <span class="mode-index">3</span>
+                            <span class="mode-name">凹透镜</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="intensityPanel" class="panel-section intensity-section is-hidden">
                     <div class="range-head">
                         <label class="panel-title" for="intensityRange">扭曲程度</label>
                         <span id="intensityValue">1.0</span>
                     </div>
-                    <input type="range" id="intensityRange" min="0" max="5" step="0.1" value="1.0" onchange="updateIntensity(this.value)" oninput="updateIntensity(this.value)">
-                    <p class="hint">拖动滑块后会重新计算映射表，画面保持实时刷新。</p>
+                    <input type="range" id="intensityRange" min="0" max="1.5" step="0.05" value="1.0" onchange="updateIntensity(this.value)" oninput="updateIntensity(this.value)">
+                    <div class="range-labels" aria-hidden="true">
+                        <span>0</span>
+                        <span>1.5</span>
+                    </div>
                 </div>
 
                 <div class="panel-section">
@@ -446,10 +603,13 @@
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
+        const intensityPanel = document.getElementById('intensityPanel');
+        const modeLabel = document.getElementById('modeLabel');
+        const resolutionLabel = document.getElementById('resolutionLabel');
         let isOpenCvReady = false;
         let mode = 0;
         let intensity = 1.0;
-        const modeNames = ["0: Normal", "1: Wave Distortion", "2: Bulge Distortion", "3: Pinch Distortion"];
+        const modeNames = ["正常", "波浪", "凸透镜", "凹透镜"];
 
         // 预先计算好的映射表
         let map_x_wave, map_y_wave;
@@ -464,11 +624,13 @@
             document.querySelectorAll('.mode-button').forEach(button => {
                 button.classList.toggle('active', Number(button.dataset.mode) === mode);
             });
+            intensityPanel.classList.toggle('is-hidden', mode === 0);
+            modeLabel.innerText = modeNames[mode];
         }
         
         function updateIntensity(value) {
             intensity = parseFloat(value);
-            document.getElementById('intensityValue').innerText = intensity.toFixed(1);
+            document.getElementById('intensityValue').innerText = intensity.toFixed(2);
             if (isOpenCvReady && video.videoWidth > 0 && video.videoHeight > 0) {
                 // 重新计算映射表
                 initDistortionMaps(video.videoWidth, video.videoHeight);
@@ -513,6 +675,7 @@
                         const height = video.videoHeight;
                         canvas.width = width;
                         canvas.height = height;
+                        resolutionLabel.innerText = `${width} x ${height}`;
                         
                         // 初始化 OpenCV 矩阵和映射表
                         initDistortionMaps(width, height);
@@ -535,6 +698,7 @@
                 video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
                 setStatusMessage("摄像头已关闭", "ready");
+                resolutionLabel.innerText = "摄像头已关闭";
 
                 // 清空视频显示区域
                 const ctx = canvas.getContext('2d');
@@ -625,9 +789,9 @@
                 }
 
                 // 在画面上绘制提示文本
-                ctx.fillStyle = "#00FF00";
-                ctx.font = "24px Arial";
-                ctx.fillText(`${modeNames[mode]} (Intensity: ${intensity.toFixed(1)})`, 20, 40);
+                ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                ctx.font = "20px Arial";
+                ctx.fillText(mode === 0 ? modeNames[mode] : `${modeNames[mode]} / ${intensity.toFixed(2)}`, 20, 36);
 
             } catch (err) {
                 console.error(err);
